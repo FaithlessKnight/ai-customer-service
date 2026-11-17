@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Agent 模板管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3250;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--text:#e2e8f0;--muted:#64748b;--mono:'JetBrains Mono',monospace;--sans:'Sora','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#1a1d27,#16192a);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#a78bfa,#6c63ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+header h1{font-size:1rem;font-weight:600}
+.nav-links{margin-left:auto;display:flex;gap:.5rem}
+.nav-link{font-size:.78rem;padding:5px 12px;border-radius:6px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:all .15s}
+.nav-link:hover,.nav-link.active{color:var(--accent2);border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.08)}
+.layout{display:grid;grid-template-columns:280px 1fr;flex:1;overflow:hidden;height:calc(100vh - 60px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-header span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.btn-new{background:var(--accent);color:white;border:none;border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;transition:opacity .15s}
+.btn-new:hover{opacity:.85}
+.bot-list{flex:1;overflow-y:auto;padding:.5rem}
+.bot-item{padding:.75rem 1rem;border-radius:8px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:4px}
+.bot-item:hover{background:var(--surface2)}
+.bot-item.active{background:rgba(108,99,255,.12);border-color:rgba(108,99,255,.35)}
+.bi-name{font-size:.9rem;font-weight:600}
+.bi-meta{font-size:.72rem;color:var(--muted);margin-top:2px}
+.bi-id{font-family:var(--mono);font-size:.68rem;color:var(--accent2)}
+.bi-col{font-size:.68rem;color:var(--green);margin-top:2px}
+.empty-list{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.85rem}
+.main{display:flex;flex-direction:column;overflow:hidden}
+.toolbar{padding:.75rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;background:var(--surface)}
+.toolbar .title{font-weight:600;flex:1;font-size:.95rem}
+.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:6px;padding:6px 14px;font-size:.78rem;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}
+.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{opacity:.85}
+.btn.danger{border-color:rgba(248,113,113,.4);color:var(--red)}.btn.danger:hover{background:rgba(248,113,113,.1)}
+.editor-area{display:grid;grid-template-columns:1fr 380px;flex:1;overflow:hidden;transition:grid-template-columns .3s ease}
+.form-panel{padding:1.5rem;overflow-y:auto}
+.preview-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s,flex .25s}
+.preview-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between}
+.preview-body{flex:1;padding:1rem;overflow-y:auto;font-family:var(--mono);font-size:.76rem;line-height:1.7;color:#a5b4fc;white-space:pre-wrap;word-break:break-word}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.field{display:flex;flex-direction:column;gap:.4rem}
+.field label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.field input,.field textarea,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:.6rem .75rem;font-size:.875rem;font-family:var(--sans);transition:border-color .15s;width:100%;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:.7rem;color:var(--muted)}
+.section-title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:1.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+.tag-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem;display:flex;flex-wrap:wrap;gap:.4rem;min-height:44px;cursor:text;transition:border-color .15s}
+.tag-wrap:focus-within{border-color:var(--accent)}
+.tag{background:rgba(108,99,255,.2);color:var(--accent2);border:1px solid rgba(108,99,255,.3);border-radius:4px;padding:2px 8px;font-size:.78rem;display:flex;align-items:center;gap:5px}
+.tag .rm{cursor:pointer;opacity:.6;line-height:1}.tag .rm:hover{opacity:1;color:var(--red)}
+.tag-input{background:none;border:none;color:var(--text);font-size:.85rem;outline:none;min-width:100px;flex:1;padding:2px 4px}
+.id-row{display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;margin-bottom:1.25rem}
+.id-label{font-size:.72rem;color:var(--muted);white-space:nowrap}
+#botId{background:none;border:none;color:var(--accent2);font-family:var(--mono);font-size:.85rem;flex:1;outline:none}
+.col-box{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:1rem;margin-bottom:1rem}
+.col-box .col-title{font-size:.75rem;color:var(--green);font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.col-presets{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+.col-preset{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:.72rem;cursor:pointer;font-family:var(--mono);color:var(--muted);transition:all .15s}
+.col-preset:hover{border-color:var(--green);color:var(--green)}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem;font-size:.85rem;display:none;z-index:999}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:var(--muted)}
+.empty-state .icon{font-size:3rem;opacity:.3}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo">&#x1F916;</div>
+  <h1>Agent 模板管理</h1>
+  <div class="nav-links">
+    
+    <a href="/admin/" class="nav-link active">&#x1F916; Agent 模板</a>
+    <a href="/admin/ingest" class="nav-link">&#x1F4E6; 数据入库</a>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span>Agent 模板列表</span>
+      <button class="btn-new" onclick="newBot()">+ 新建</button>
+    </div>
+    <div class="bot-list" id="botList"><div class="empty-list">暂无配置</div></div>
+  </aside>
+  <div class="main">
+    <div id="emptyState" class="empty-state">
+      <div class="icon">&#x1F916;</div>
+      <p>选择或新建一个 Agent 模板开始编辑</p>
+    </div>
+    <div id="editorWrapper" style="display:none;flex-direction:column;height:100%">
+      <div class="toolbar">
+        <span class="title" id="editorTitle">新建机器人</span>
+        <button class="btn" onclick="previewPrompt()">&#x1F441; 预览 Prompt</button>
+        <button class="btn" id="btnTogglePreview" onclick="togglePreviewPanel()" title="收纳/展开预览">← 收纳</button>
+        <button class="btn primary" onclick="saveBot()">&#x1F4BE; 保存</button>
+        <button class="btn danger" id="btnDelete" style="display:none" onclick="deleteBot()">&#x1F5D1; 删除</button>
+      </div>
+      <div class="editor-area" id="editorArea">
+        <div class="form-panel">
+          <div class="id-row">
+            <span class="id-label">Agent ID</span>
+            <input type="text" id="botId" placeholder="cs-agent / sales-agent"/>
+          </div>
+          <div class="section-title">&#x1F4DA; 知识库挂载</div>
+          <div class="col-box">
+            <div class="col-title">&#x1F7E2; 知识库集合（从已入库的 Collection 中选择）</div>
+            <div id="col-loading" style="font-size:.75rem;color:var(--muted);padding:.25rem 0">加载中...</div>
+            <div id="col-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0"></div>
+            <span class="hint">可同时挂载多个 Collection，并发检索后 RRF 融合</span>
+          </div>
+          <div class="section-title">&#x1F3AD; 角色身份</div>
+          <div class="form-grid">
+            <div class="field"><label>客服名字</label><input id="f_name" placeholder="小美"/></div>
+            <div class="field"><label>角色定位</label><input id="f_role" placeholder="电商客服助手"/></div>
+            <div class="field" style="grid-column:1/-1"><label>品牌名称</label><input id="f_brand" placeholder="优品电商"/></div>
+          </div>
+          <div class="section-title">品牌介绍</div>
+          <div class="field"><textarea id="f_brand_intro" rows="3" placeholder="品牌定位、主营类目..."></textarea></div>
+          <div class="section-title">性格特征 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_traits').focus()">
+            <div id="tags_traits"></div><input class="tag-input" id="ti_traits" placeholder="亲切温柔" onkeydown="addTag(event,'traits')"/>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem"><div class="col-presets" id="presets-traits"></div><span onclick="clearPresets('traits')" style="font-size:.68rem;color:var(--muted);cursor:pointer;white-space:nowrap;margin-left:.5rem;padding:2px 6px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">一键清空</span></div>
+          </div>
+          <div class="section-title">话术规范 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_style').focus()">
+            <div id="tags_style"></div><input class="tag-input" id="ti_style" placeholder="使用「亲」「您」称谓" onkeydown="addTag(event,'style')"/>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem"><div class="col-presets" id="presets-style"></div><span onclick="clearPresets('style')" style="font-size:.68rem;color:var(--muted);cursor:pointer;white-space:nowrap;margin-left:.5rem;padding:2px 6px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">一键清空</span></div>
+          </div>
+          <div class="section-title">闲聊引导话题 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_topics').focus()">
+            <div id="tags_topics"></div><input class="tag-input" id="ti_topics" placeholder="产品推荐" onkeydown="addTag(event,'topics')"/>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem"><div class="col-presets" id="presets-topics"></div><span onclick="clearPresets('topics')" style="font-size:.68rem;color:var(--muted);cursor:pointer;white-space:nowrap;margin-left:.5rem;padding:2px 6px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">一键清空</span></div>
+          </div>
+          <div class="section-title">额外业务指令</div>
+          <div class="field">
+            <textarea id="f_extra" rows="4" placeholder="主推玫瑰系列，价格策略不低于官网价..."></textarea>
+            <span class="hint">直接注入 System Prompt，可传达特殊业务规则</span>
+          </div>
+          <div class="section-title">&#x1F4CB; 回答准确性规则 <span class="hint">（控制模型输出的精准度，推荐填写）</span></div>
+          <div style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);border-radius:8px;padding:1rem;margin-bottom:1rem">
+            <div style="font-size:.72rem;color:var(--blue);font-weight:600;margin-bottom:.75rem">&#x26A0; 准确性约束</div>
+            <div class="field" style="margin-bottom:.75rem">
+              <label>禁止回答的范围</label>
+              <textarea id="f_acc_deny" rows="2" placeholder="不在知识库中的成分功效不得自行推断；不得对未经证实的功效作出承诺；不得给出医疗建议"></textarea>
+              <span class="hint">模型不得主动推断或编造的内容范围</span>
+            </div>
+            <div class="field" style="margin-bottom:.75rem">
+              <label>知识库优先级声明</label>
+              <textarea id="f_acc_priority" rows="2" placeholder="所有产品信息必须以知识库内容为准，不得依赖训练知识补充；若知识库无相关信息，须明确告知用户"本产品该方面信息暂未收录""></textarea>
+              <span class="hint">告知模型如何处理知识库之外的问题</span>
+            </div>
+            <div class="field" style="margin-bottom:.75rem">
+              <label>高频误答场景</label>
+              <textarea id="f_acc_scenarios" rows="3" placeholder="孕妇/婴儿/敏感肌问题：必须引用产品适用人群说明，不得给出"一般可以用"等模糊回答&#10;成分安全问题：必须引用成分表，不得凭经验判断&#10;价格问题：只报知识库中的标准售价，不得自行推算折扣"></textarea>
+              <span class="hint">每行一个场景，格式：场景：处理规则</span>
+            </div>
+            <div class="field">
+              <label>不确定时的标准话术</label>
+              <textarea id="f_acc_fallback" rows="2" placeholder="关于您询问的XXX，我目前没有准确资料，建议您查看产品说明书或联系人工客服为您核实，以免给您带来不必要的困扰。"></textarea>
+              <span class="hint">知识库无答案时模型应使用的固定表述</span>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap">
+              <button class="btn" style="font-size:.72rem" onclick="fillAccTemplate('beauty')">&#x1F9F4; 美妆个护模板</button>
+              <button class="btn" style="font-size:.72rem" onclick="fillAccTemplate('food')">&#x1F96C; 食品保健模板</button>
+              <button class="btn" style="font-size:.72rem" onclick="fillAccTemplate('ecommerce')">&#x1F6CD; 通用电商模板</button>
+              <button class="btn" style="font-size:.72rem;margin-left:auto;color:var(--muted)" onclick="clearAccTemplate()">清空</button>
+            </div>
+          </div>
+        </div>
+        <div class="preview-panel" id="previewPanel">
+          <div class="preview-header"><span>Prompt 预览</span><button class="btn" onclick="copyPreview()">&#x1F4CB; 复制</button></div>
+          <div class="preview-body" id="previewBody"><span style="color:var(--muted);font-family:var(--sans);font-style:italic">点击「预览 Prompt」查看渲染结果...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const API='';
+const tags={traits:[],style:[],topics:[],col:[]};
+let currentId=null;
+
+var _defaultPresets={
+  traits:['亲切温柔','专业严谨','活泼幽默','耒心细致','简洁高效','热情主动'],
+  style:['使用「亲」「您」称谓','结尾带表情符号','回复控制在100字内','先安抚再解决','引导复购','避免承诺无法兆现'],
+  topics:['产品推荐','新品上市','优惠活动','使用心得','护肤小知识','会员福利']
+};
+function _loadPresets(){
+  try{
+    var saved=localStorage.getItem('agent_presets');
+    if(saved){
+      var p=JSON.parse(saved);
+      if(p.traits&&p.style&&p.topics)return p;
+    }
+  }catch(e){}
+  return{
+    traits:[..._defaultPresets.traits],
+    style:[..._defaultPresets.style],
+    topics:[..._defaultPresets.topics]
+  };
+}
+function _savePresets(){
+  try{localStorage.setItem('agent_presets',JSON.stringify(_presets));}catch(e){}
+}
+var _presets=_loadPresets();
+
+// ── 准确性规则模板 ────────────────────────────────────────────
+var _accTemplates={
+  beauty:{
+    deny:'不在知识库中的成分功效不得自行推断；不得对未经证实的功效（如美白、祛斑）作出承诺；不得提供医疗建议（如"能治皮炎"）',
+    priority:'所有产品成分、功效、适用人群必须以知识库内容为准，不得依赖训练知识补充；若知识库无相关信息，须明确告知用户"本产品该方面信息暂未收录，建议查看产品说明书"',
+    scenarios:'孕妇/婴儿/敏感肌问题：必须引用产品适用人群说明，不得给出"一般可以用"等模糊回答\n成分安全问题：必须引用成分表，不得凭经验判断是否含酒精/防腐剂/香精\n功效问题：只能描述知识库中明确标注的功效，不得推断或夸大\n价格问题：只报知识库中的标准售价，不得自行推算折扣或比价',
+    fallback:'关于您询问的这个问题，我目前没有准确的产品资料，建议您查看产品说明书或联系人工客服为您核实，以免给您带来不必要的困扰。'
+  },
+  food:{
+    deny:'不得给出任何医疗功效承诺（如"能降血糖""能治病"）；不在知识库中的营养成分不得推断；不得建议特殊人群（孕妇、病患）随意服用',
+    priority:'所有产品成分、营养信息、食用方法必须以知识库内容为准；若知识库无相关信息，引导用户查看产品包装或咨询专业医生',
+    scenarios:'过敏人群问题：必须引用成分表，不得自行判断是否含过敏原\n保质期/储存问题：只给出知识库中的标注信息，不得推算\n医疗功效问题：明确说明本产品为食品，不具备医疗功效，建议咨询医生\n特殊人群（孕妇/婴儿/老人）：必须引用适用人群说明，不确定时引导咨询医生',
+    fallback:'关于您询问的这个问题，我目前没有准确的产品资料，建议您查看产品包装说明或联系人工客服，重要健康问题请咨询专业医生。'
+  },
+  ecommerce:{
+    deny:'不得编造产品规格、尺寸、材质等参数；不得承诺知识库中未注明的售后条款；不得自行推算或给出折扣优惠',
+    priority:'所有产品参数、价格、库存、售后政策必须以知识库内容为准；若知识库无相关信息，引导用户联系人工客服确认',
+    scenarios:'价格/优惠问题：只报知识库中的标准价格，活动优惠须以官方公告为准\n库存/发货问题：不确定时告知以实际下单页面为准，不得随意承诺\n退换货问题：只引用知识库中的售后政策，不得自行扩展或承诺额外权益\n产品参数问题：只给出知识库中有明确记录的参数，不得推测',
+    fallback:'关于您询问的这个问题，我目前没有准确的资料，建议您联系人工客服为您进一步确认，避免信息有误影响您的购买决策。'
+  }
+};
+
+function fillAccTemplate(type){
+  var t=_accTemplates[type];
+  if(!t)return;
+  document.getElementById('f_acc_deny').value=t.deny;
+  document.getElementById('f_acc_priority').value=t.priority;
+  document.getElementById('f_acc_scenarios').value=t.scenarios;
+  document.getElementById('f_acc_fallback').value=t.fallback;
+}
+function clearAccTemplate(){
+  ['f_acc_deny','f_acc_priority','f_acc_scenarios','f_acc_fallback'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+}
+
+function renderPresets(key){
+  var box=document.getElementById('presets-'+key);
+  if(!box)return;
+  box.innerHTML='';
+  _presets[key].forEach(function(val){
+    var active=tags[key]&&tags[key].includes(val);
+    var chip=document.createElement('span');
+    chip.className='col-preset';
+    chip.style.position='relative';
+    chip.style.paddingRight='20px';
+    if(active){chip.style.borderColor='var(--accent)';chip.style.color='var(--accent2)';chip.style.background='rgba(108,99,255,.12)';}
+    chip.appendChild(document.createTextNode(val));
+    chip.addEventListener('click',function(e){togglePresetItem(e,key,val);});
+    var rm=document.createElement('span');
+    rm.textContent='×';
+    rm.style.cssText='position:absolute;right:3px;top:50%;transform:translateY(-50%);cursor:pointer;opacity:.6;font-size:.8rem;font-weight:bold;line-height:1';
+    rm.title='删除此预设';
+    rm.addEventListener('click',function(e){e.stopPropagation();removePreset(e,key,val);});
+    chip.appendChild(rm);
+    box.appendChild(chip);
+  });
+}
+
+function togglePresetItem(e,key,val){
+  e.stopPropagation();
+  if(!tags[key])tags[key]=[];
+  var has=tags[key].includes(val);
+  if(has){tags[key]=tags[key].filter(function(v){return v!==val;});}
+  else{tags[key].push(val);}
+  renderTags(key); renderPresets(key);
+}
+
+function clearPresets(key){
+  if(!confirm('确定清空「'+({'traits':'性格特征','style':'话术规范','topics':'闲聊话题'}[key]||key)+'」所有预设？'))return;
+  _presets[key]=[];
+  tags[key]=[];
+  _savePresets();
+  renderTags(key);
+  renderPresets(key);
+}
+function removePreset(e,key,val){
+  e.stopPropagation();
+  _presets[key]=_presets[key].filter(function(v){return v!==val;});
+  tags[key]=tags[key].filter(function(v){return v!==val;});
+  _savePresets();
+  renderTags(key); renderPresets(key);
+}
+
+async function loadList(){
+  const r=await fetch(API+'/admin/personas');const list=await r.json();
+  const el=document.getElementById('botList');
+  if(!list.length){el.innerHTML='<div class="empty-list">暂无配置</div>';return;}
+  el.innerHTML=list.map(p=>`<div class="bot-item${p.id===currentId?' active':''}" onclick="loadBot('${p.id}')"><div class="bi-name">${p.name||'未命名'} <span style="font-size:.7rem;opacity:.6">${p.role||''}</span></div><div class="bi-meta">${p.brand||''}</div><div class="bi-col">&#x1F4DA; ${(p.collections||[p.knowledge_collection||'agent_memory']).join(' + ')}</div><div class="bi-id">${p.id}</div></div>`).join('');
+}
+
+function showEditor(show){
+  document.getElementById('emptyState').style.display=show?'none':'flex';
+  const w=document.getElementById('editorWrapper');
+  w.style.display=show?'flex':'none';
+}
+
+function syncPresetStyles(){
+  document.querySelectorAll('.col-preset').forEach(function(el){
+    var m=(el.getAttribute('onclick')||'').match(/togglePreset\(event,'([\w一-鿿]+)','([\s\S]+?)'\)/);
+    if(!m)return;
+    var active=tags[m[1]]&&tags[m[1]].includes(m[2]);
+    el.style.borderColor=active?'var(--accent)':'';
+    el.style.color=active?'var(--accent2)':'';
+    el.style.background=active?'rgba(108,99,255,.12)':'';
+  });
+}
+
+function togglePreset(e,key,val){
+  if(!tags[key])tags[key]=[];
+  var has=tags[key].includes(val);
+  if(has){tags[key]=tags[key].filter(function(v){return v!==val;});}else{tags[key].push(val);}
+  renderTags(key);
+}
+
+function addTag(e,key){
+  if(e.key!=='Enter')return;
+  e.preventDefault();
+  var v=e.target.value.trim();
+  if(v){
+    if(!_presets[key].includes(v)){_presets[key].push(v);}
+    _savePresets();
+    renderPresets(key);
+  }
+  e.target.value='';
+}
+
+function renderTags(key){
+  var map={traits:'tags_traits',style:'tags_style',topics:'tags_topics'};
+  var el=document.getElementById(map[key]);
+  if(!el)return;
+  el.innerHTML=tags[key].map(function(t,i){
+    return '<span class="tag">'+t+'<span class="rm" onclick="removeTag(\''+key+'\','+i+')">x</span></span>';
+  }).join('');
+  setTimeout(syncPresetStyles,0);
+}
+
+function removeTag(key,idx){tags[key].splice(idx,1);renderTags(key);}
+
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.className=type;el.style.display='block';
+  setTimeout(function(){el.style.display='none';},2500);
+}
+
+function newBot(){
+  currentId=null;
+  document.getElementById('botId').value='';
+  document.getElementById('botId').removeAttribute('readonly');
+  document.getElementById('editorTitle').textContent='新建 Agent 模板';
+  document.getElementById('btnDelete').style.display='none';
+  ['f_name','f_role','f_brand','f_brand_intro','f_extra','f_acc_deny','f_acc_priority','f_acc_scenarios','f_acc_fallback'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('previewBody').innerHTML='<span style="color:var(--muted);font-style:italic">点击「预览 Prompt」...</span>';
+  ['traits','style','topics'].forEach(function(k){tags[k]=[];renderTags(k);renderPresets(k);});
+  tags.col=[];
+  loadCollections([]);
+  showEditor(true);
+}
+
+async function loadBot(id){
+  var r=await fetch(API+'/admin/personas/'+id);
+  if(!r.ok){toast('加载失败','err');return;}
+  var p=await r.json();currentId=id;
+  document.getElementById('botId').value=id;
+  document.getElementById('botId').setAttribute('readonly','readonly');
+  document.getElementById('editorTitle').textContent=(p.name||id)+' ('+id+')';
+  document.getElementById('btnDelete').style.display='';
+  tags.col=p.collections||p.knowledge_collections||['agent_memory'];
+  document.getElementById('f_name').value=p.name||'';
+  document.getElementById('f_role').value=p.role||'';
+  document.getElementById('f_brand').value=p.brand||'';
+  document.getElementById('f_brand_intro').value=p.brand_intro||'';
+  document.getElementById('f_extra').value=p.extra_instructions||'';
+  var acc=p.accuracy_rules||{};
+  document.getElementById('f_acc_deny').value=acc.deny||'';
+  document.getElementById('f_acc_priority').value=acc.priority||'';
+  document.getElementById('f_acc_scenarios').value=acc.scenarios||'';
+  document.getElementById('f_acc_fallback').value=acc.fallback||'';
+  tags.traits=p.personality_traits||[];renderTags('traits');
+  tags.style=p.style_guidelines||[];renderTags('style');
+  tags.topics=p.chitchat_topics||[];renderTags('topics');
+  loadCollections(tags.col);
+  document.getElementById('previewBody').innerHTML='<span style="color:var(--muted);font-style:italic">点击「预览 Prompt」...</span>';
+  showEditor(true);
+  document.querySelectorAll('.bot-item').forEach(function(e){
+    e.classList.remove('active');
+    if(e.querySelector('.bi-id')&&e.querySelector('.bi-id').textContent===id)e.classList.add('active');
+  });
+}
+
+function buildPayload(){
+  var acc={
+    deny:document.getElementById('f_acc_deny').value.trim(),
+    priority:document.getElementById('f_acc_priority').value.trim(),
+    scenarios:document.getElementById('f_acc_scenarios').value.trim(),
+    fallback:document.getElementById('f_acc_fallback').value.trim()
+  };
+  return{
+    collections:getSelectedCols(),
+    name:document.getElementById('f_name').value.trim(),
+    role:document.getElementById('f_role').value.trim(),
+    brand:document.getElementById('f_brand').value.trim(),
+    brand_intro:document.getElementById('f_brand_intro').value.trim(),
+    personality_traits:[...tags.traits],
+    style_guidelines:[...tags.style],
+    chitchat_topics:[...tags.topics],
+    extra_instructions:document.getElementById('f_extra').value.trim(),
+    accuracy_rules:acc
+  };
+}
+
+async function saveBot(){
+  var id=document.getElementById('botId').value.trim();
+  if(!id){toast('请填写 Agent ID','err');return;}
+  var payload=buildPayload();
+  if(!payload.name){toast('请填写客服名字','err');return;}
+  var r=await fetch(API+'/admin/personas/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(r.ok){
+    currentId=id;toast('保存成功','ok');loadList();
+    document.getElementById('editorTitle').textContent=payload.name+' ('+id+')';
+    document.getElementById('btnDelete').style.display='';
+    document.getElementById('botId').setAttribute('readonly','readonly');
+  }else{
+    var e=await r.json();toast('保存失败: '+(e.detail||''),'err');
+  }
+}
+
+async function deleteBot(){
+  if(!currentId)return;
+  if(!confirm('确定删除 "'+currentId+'"？'))return;
+  var r=await fetch(API+'/admin/personas/'+currentId,{method:'DELETE'});
+  if(r.ok){toast('已删除','ok');currentId=null;showEditor(false);loadList();}
+  else toast('删除失败','err');
+}
+
+async function previewPrompt(){
+  var payload=buildPayload();
+  var r=await fetch(API+'/admin/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:payload})});
+  var d=await r.json();
+  var el=document.getElementById('previewBody');
+  if(d.ok)el.textContent=d.preview;else el.textContent='预览失败: '+(d.detail||'');
+}
+
+function togglePreviewPanel(){
+  var area=document.getElementById('editorArea');
+  var panel=document.getElementById('previewPanel');
+  var btn=document.getElementById('btnTogglePreview');
+  if(!panel||!area)return;
+  var collapsed=panel.dataset.collapsed==='1';
+  if(collapsed){
+    area.style.gridTemplateColumns='1fr 380px';
+    panel.style.overflow='';
+    panel.dataset.collapsed='0';
+    btn.textContent='← 收纳';
+  } else {
+    area.style.gridTemplateColumns='1fr 0px';
+    panel.style.overflow='hidden';
+    panel.dataset.collapsed='1';
+    btn.textContent='→ 展开预览';
+  }
+}
+function copyPreview(){
+  navigator.clipboard.writeText(document.getElementById('previewBody').textContent).then(function(){toast('已复制','ok');});
+}
+
+let _allCollections=[];
+async function loadCollections(selected){
+  selected=selected||[];
+  var loading=document.getElementById('col-loading');
+  try{
+    var r=await fetch(API+'/admin/collections');
+    var d=await r.json();
+    _allCollections=d.collections||[];
+  }catch(e){
+    _allCollections=['agent_memory'];
+  }
+  for(var i=0;i<selected.length;i++){if(!_allCollections.includes(selected[i]))_allCollections.push(selected[i]);}
+  if(loading)loading.style.display='none';
+  renderColCheckboxes(selected);
+}
+
+function renderColCheckboxes(selected){
+  var box=document.getElementById('col-checkboxes');
+  if(!box)return;
+  box.innerHTML=_allCollections.map(function(col){
+    var checked=tags.col.includes(col)?'checked':'';
+    return '<label style="display:flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem;font-family:var(--mono);transition:all .15s"><input type="checkbox" value="'+col+'" '+checked+' onchange="onColChange(this)" style="accent-color:var(--accent)"/>'+col+'</label>';
+  }).join('');
+}
+
+function onColChange(cb){
+  if(cb.checked){if(!tags.col.includes(cb.value))tags.col.push(cb.value);}
+  else{tags.col=tags.col.filter(function(v){return v!==cb.value;});}
+}
+
+function getSelectedCols(){return tags.col.length?[...tags.col]:['agent_memory'];}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadList();
+  loadCollections([]);
+  ['traits','style','topics'].forEach(renderPresets);
+});
+</script></body></html>

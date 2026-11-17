@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>机器人配置管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3250;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--text:#e2e8f0;--muted:#64748b;--mono:'JetBrains Mono',monospace;--sans:'Sora','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#1a1d27,#16192a);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#a78bfa,#6c63ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+header h1{font-size:1rem;font-weight:600}
+.nav-links{margin-left:auto;display:flex;gap:.5rem}
+.nav-link{font-size:.78rem;padding:5px 12px;border-radius:6px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:all .15s}
+.nav-link:hover,.nav-link.active{color:var(--accent2);border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.08)}
+.layout{display:grid;grid-template-columns:280px 1fr;flex:1;overflow:hidden;height:calc(100vh - 60px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-header span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.btn-new{background:var(--accent);color:white;border:none;border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;transition:opacity .15s}
+.btn-new:hover{opacity:.85}
+.bot-list{flex:1;overflow-y:auto;padding:.5rem}
+.bot-item{padding:.75rem 1rem;border-radius:8px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:4px}
+.bot-item:hover{background:var(--surface2)}
+.bot-item.active{background:rgba(108,99,255,.12);border-color:rgba(108,99,255,.35)}
+.bi-name{font-size:.9rem;font-weight:600}
+.bi-meta{font-size:.72rem;color:var(--muted);margin-top:2px}
+.bi-id{font-family:var(--mono);font-size:.68rem;color:var(--accent2)}
+.bi-col{font-size:.68rem;color:var(--green);margin-top:2px}
+.empty-list{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.85rem}
+.main{display:flex;flex-direction:column;overflow:hidden}
+.toolbar{padding:.75rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;background:var(--surface)}
+.toolbar .title{font-weight:600;flex:1;font-size:.95rem}
+.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:6px;padding:6px 14px;font-size:.78rem;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}
+.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{opacity:.85}
+.btn.danger{border-color:rgba(248,113,113,.4);color:var(--red)}.btn.danger:hover{background:rgba(248,113,113,.1)}
+.editor-area{display:grid;grid-template-columns:1fr 380px;flex:1;overflow:hidden}
+.form-panel{padding:1.5rem;overflow-y:auto}
+.preview-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.preview-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between}
+.preview-body{flex:1;padding:1rem;overflow-y:auto;font-family:var(--mono);font-size:.76rem;line-height:1.7;color:#a5b4fc;white-space:pre-wrap;word-break:break-word}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.field{display:flex;flex-direction:column;gap:.4rem}
+.field label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.field input,.field textarea,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:.6rem .75rem;font-size:.875rem;font-family:var(--sans);transition:border-color .15s;width:100%;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:.7rem;color:var(--muted)}
+.section-title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:1.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+.tag-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem;display:flex;flex-wrap:wrap;gap:.4rem;min-height:44px;cursor:text;transition:border-color .15s}
+.tag-wrap:focus-within{border-color:var(--accent)}
+.tag{background:rgba(108,99,255,.2);color:var(--accent2);border:1px solid rgba(108,99,255,.3);border-radius:4px;padding:2px 8px;font-size:.78rem;display:flex;align-items:center;gap:5px}
+.tag .rm{cursor:pointer;opacity:.6;line-height:1}.tag .rm:hover{opacity:1;color:var(--red)}
+.tag-input{background:none;border:none;color:var(--text);font-size:.85rem;outline:none;min-width:100px;flex:1;padding:2px 4px}
+.id-row{display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;margin-bottom:1.25rem}
+.id-label{font-size:.72rem;color:var(--muted);white-space:nowrap}
+#botId{background:none;border:none;color:var(--accent2);font-family:var(--mono);font-size:.85rem;flex:1;outline:none}
+.col-box{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:1rem;margin-bottom:1rem}
+.col-box .col-title{font-size:.75rem;color:var(--green);font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.col-presets{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+.col-preset{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:.72rem;cursor:pointer;font-family:var(--mono);color:var(--muted);transition:all .15s}
+.col-preset:hover{border-color:var(--green);color:var(--green)}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem;font-size:.85rem;display:none;z-index:999}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:var(--muted)}
+.empty-state .icon{font-size:3rem;opacity:.3}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo">&#x1F916;</div>
+  <h1>机器人配置管理</h1>
+  <div class="nav-links">
+    <a href="/admin/" class="nav-link">&#x270F; Persona</a>
+    <a href="/admin/bots" class="nav-link active">&#x1F916; 机器人配置</a>
+    <a href="/admin/ingest" class="nav-link">&#x1F4E6; 数据入库</a>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span>机器人列表</span>
+      <button class="btn-new" onclick="newBot()">+ 新建</button>
+    </div>
+    <div class="bot-list" id="botList"><div class="empty-list">暂无配置</div></div>
+  </aside>
+  <div class="main">
+    <div id="emptyState" class="empty-state">
+      <div class="icon">&#x1F916;</div>
+      <p>选择或新建一个机器人配置开始编辑</p>
+    </div>
+    <div id="editorWrapper" style="display:none;flex-direction:column;height:100%">
+      <div class="toolbar">
+        <span class="title" id="editorTitle">新建机器人</span>
+        <button class="btn" onclick="previewPrompt()">&#x1F441; 预览 Prompt</button>
+        <button class="btn primary" onclick="saveBot()">&#x1F4BE; 保存</button>
+        <button class="btn danger" id="btnDelete" style="display:none" onclick="deleteBot()">&#x1F5D1; 删除</button>
+      </div>
+      <div class="editor-area" id="editorArea">
+        <div class="form-panel">
+          <div class="id-row">
+            <span class="id-label">Bot ID</span>
+            <input type="text" id="botId" placeholder="cs-bot / sales-bot"/>
+          </div>
+          <div class="section-title">&#x1F4DA; 知识库挂载</div>
+          <div class="col-box">
+            <div class="col-title">&#x1F7E2; 知识库集合（从已入库的 Collection 中选择）</div>
+            <div id="col-loading" style="font-size:.75rem;color:var(--muted);padding:.25rem 0">加载中...</div>
+            <div id="col-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0"></div>
+            <span class="hint">可同时挂载多个 Collection，并发检索后 RRF 融合</span>
+          </div>
+          <div class="section-title">&#x1F3AD; 角色身份</div>
+          <div class="form-grid">
+            <div class="field"><label>客服名字</label><input id="f_name" placeholder="小美"/></div>
+            <div class="field"><label>角色定位</label><input id="f_role" placeholder="电商客服助手"/></div>
+            <div class="field" style="grid-column:1/-1"><label>品牌名称</label><input id="f_brand" placeholder="优品电商"/></div>
+          </div>
+          <div class="section-title">品牌介绍</div>
+          <div class="field"><textarea id="f_brand_intro" rows="3" placeholder="品牌定位、主营类目..."></textarea></div>
+          <div class="section-title">性格特征 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_traits').focus()">
+            <div id="tags_traits"></div><input class="tag-input" id="ti_traits" placeholder="亲切温柔" onkeydown="addTag(event,'traits')"/>
+          <div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'traits','亲切温柔')">亲切温柔</span><span class="col-preset" onclick="togglePreset(event,'traits','专业严谨')">专业严谨</span><span class="col-preset" onclick="togglePreset(event,'traits','活泼幽默')">活泼幽默</span><span class="col-preset" onclick="togglePreset(event,'traits','耐心细致')">耐心细致</span><span class="col-preset" onclick="togglePreset(event,'traits','简洁高效')">简洁高效</span><span class="col-preset" onclick="togglePreset(event,'traits','热情主动')">热情主动</span></div><div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'traits','亲切温柔')">亲切温柔</span><span class="col-preset" onclick="togglePreset(event,'traits','专业严谨')">专业严谨</span><span class="col-preset" onclick="togglePreset(event,'traits','活泼幽默')">活泼幽默</span><span class="col-preset" onclick="togglePreset(event,'traits','耐心细致')">耐心细致</span><span class="col-preset" onclick="togglePreset(event,'traits','简洁高效')">简洁高效</span><span class="col-preset" onclick="togglePreset(event,'traits','热情主动')">热情主动</span></div>
+          </div>
+          <div class="section-title">话术规范 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_style').focus()">
+            <div id="tags_style"></div><input class="tag-input" id="ti_style" placeholder="使用「亲」「您」称谓" onkeydown="addTag(event,'style')"/>
+          <div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'style','使用「亲」「您」称谓')">使用「亲」「您」称谓</span><span class="col-preset" onclick="togglePreset(event,'style','结尾带表情符号')">结尾带表情符号</span><span class="col-preset" onclick="togglePreset(event,'style','回复控制在100字内')">回复控制在100字内</span><span class="col-preset" onclick="togglePreset(event,'style','先安抚再解决')">先安抚再解决</span><span class="col-preset" onclick="togglePreset(event,'style','引导复购')">引导复购</span><span class="col-preset" onclick="togglePreset(event,'style','避免承诺无法兑现')">避免承诺无法兑现</span></div><div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'style','使用亲您称谓')">使用亲您称谓</span><span class="col-preset" onclick="togglePreset(event,'style','结尾带表情符号')">结尾带表情符号</span><span class="col-preset" onclick="togglePreset(event,'style','回复控制在100字内')">回复控制在100字内</span><span class="col-preset" onclick="togglePreset(event,'style','先安抚再解决')">先安抚再解决</span><span class="col-preset" onclick="togglePreset(event,'style','引导复购')">引导复购</span><span class="col-preset" onclick="togglePreset(event,'style','避免承诺无法兑现')">避免承诺无法兑现</span></div>
+          </div>
+          <div class="section-title">闲聊引导话题 <span class="hint">（Enter 添加）</span></div>
+          <div class="tag-wrap" onclick="document.getElementById('ti_topics').focus()">
+            <div id="tags_topics"></div><input class="tag-input" id="ti_topics" placeholder="产品推荐" onkeydown="addTag(event,'topics')"/>
+          <div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'topics','产品推荐')">产品推荐</span><span class="col-preset" onclick="togglePreset(event,'topics','新品上市')">新品上市</span><span class="col-preset" onclick="togglePreset(event,'topics','优惠活动')">优惠活动</span><span class="col-preset" onclick="togglePreset(event,'topics','使用心得')">使用心得</span><span class="col-preset" onclick="togglePreset(event,'topics','护肤小知识')">护肤小知识</span><span class="col-preset" onclick="togglePreset(event,'topics','会员福利')">会员福利</span></div><div class="col-presets" style="margin-top:.4rem"><span class="col-preset" onclick="togglePreset(event,'topics','产品推荐')">产品推荐</span><span class="col-preset" onclick="togglePreset(event,'topics','新品上市')">新品上市</span><span class="col-preset" onclick="togglePreset(event,'topics','优惠活动')">优惠活动</span><span class="col-preset" onclick="togglePreset(event,'topics','使用心得')">使用心得</span><span class="col-preset" onclick="togglePreset(event,'topics','护肤小知识')">护肤小知识</span><span class="col-preset" onclick="togglePreset(event,'topics','会员福利')">会员福利</span></div>
+          </div>
+          <div class="section-title">额外业务指令</div>
+          <div class="field">
+            <textarea id="f_extra" rows="4" placeholder="主推玫瑰系列，价格策略不低于官网价..."></textarea>
+            <span class="hint">直接注入 System Prompt，可传达特殊业务规则</span>
+          </div>
+        </div>
+        <div class="preview-panel" id="previewPanel">
+          <div class="preview-header"><span>Prompt 预览</span><div style="display:flex;gap:.4rem"><button class="btn" onclick="copyPreview()">&#x1F4CB; 复制</button><button class="btn" id="btnTogglePreview" onclick="togglePreviewPanel()" title="收纳/展开预览">← 收纳</button></div></div>
+          <div class="preview-body" id="previewBody"><span style="color:var(--muted);font-family:var(--sans);font-style:italic">点击「预览 Prompt」查看渲染结果...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const API='';
+const tags={traits:[],style:[],topics:[],col:[]};
+let currentId=null;
+async function loadList(){
+  const r=await fetch(API+'/admin/personas');const list=await r.json();
+  const el=document.getElementById('botList');
+  if(!list.length){el.innerHTML='<div class="empty-list">暂无配置</div>';return;}
+  el.innerHTML=list.map(p=>`<div class="bot-item${p.id===currentId?' active':''}" onclick="loadBot('${p.id}')"><div class="bi-name">${p.name||'未命名'} <span style="font-size:.7rem;opacity:.6">${p.role||''}</span></div><div class="bi-meta">${p.brand||''}</div><div class="bi-col">&#x1F4DA; ${(p.collections||[p.knowledge_collection||'agent_memory']).join(' + ')}</div><div class="bi-id">${p.id}</div></div>`).join('');
+}
+function showEditor(show){document.getElementById('emptyState').style.display=show?'none':'flex';const w=document.getElementById('editorWrapper');w.style.display=show?'flex':'none';}
+function newBot(){
+  currentId=null;
+  document.getElementById('botId').value='';document.getElementById('botId').removeAttribute('readonly');
+  document.getElementById('editorTitle').textContent='新建机器人';
+  document.getElementById('btnDelete').style.display='none';
+  
+  ['f_name','f_role','f_brand','f_brand_intro','f_extra'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('previewBody').innerHTML='<span style="color:var(--muted);font-style:italic">点击「预览 Prompt」...</span>';
+  ['traits','style','topics'].forEach(k=>{tags[k]=[];renderTags(k);}); tags.col=[]; loadCollections([]); showEditor(true);
+}
+async function loadBot(id){
+  const r=await fetch(API+'/admin/personas/'+id);if(!r.ok){toast('加载失败','err');return;}
+  const p=await r.json();currentId=id;
+  document.getElementById('botId').value=id;document.getElementById('botId').setAttribute('readonly','readonly');
+  document.getElementById('editorTitle').textContent=(p.name||id)+' ('+id+')';
+  document.getElementById('btnDelete').style.display='';
+  tags.col=p.collections||p.knowledge_collections||['agent_memory']; loadCollections(tags.col);
+  document.getElementById('f_name').value=p.name||'';document.getElementById('f_role').value=p.role||'';
+  document.getElementById('f_brand').value=p.brand||'';document.getElementById('f_brand_intro').value=p.brand_intro||'';
+  document.getElementById('f_extra').value=p.extra_instructions||'';
+  tags.traits=p.personality_traits||[];renderTags('traits');
+  tags.style=p.style_guidelines||[];renderTags('style');
+  tags.topics=p.chitchat_topics||[];renderTags('topics');
+  document.getElementById('previewBody').innerHTML='<span style="color:var(--muted);font-style:italic">点击「预览 Prompt」...</span>';
+  showEditor(true);
+  document.querySelectorAll('.bot-item').forEach(e=>{e.classList.remove('active');if(e.querySelector('.bi-id')&&e.querySelector('.bi-id').textContent===id)e.classList.add('active');});
+}
+function setCollection(col){document.getElementById('f_collection').value=col;}
+function buildPayload(){return{collections:getSelectedCols(),name:document.getElementById('f_name').value.trim(),role:document.getElementById('f_role').value.trim(),brand:document.getElementById('f_brand').value.trim(),brand_intro:document.getElementById('f_brand_intro').value.trim(),personality_traits:[...tags.traits],style_guidelines:[...tags.style],chitchat_topics:[...tags.topics],extra_instructions:document.getElementById('f_extra').value.trim()};}
+async function saveBot(){
+  const id=document.getElementById('botId').value.trim();
+  if(!id){toast('请填写 Bot ID','err');return;}
+  const payload=buildPayload();if(!payload.name){toast('请填写客服名字','err');return;}
+  const r=await fetch(API+'/admin/personas/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(r.ok){currentId=id;toast('保存成功','ok');loadList(); loadCollections([]);document.getElementById('editorTitle').textContent=payload.name+' ('+id+')';document.getElementById('btnDelete').style.display='';document.getElementById('botId').setAttribute('readonly','readonly');}
+  else{const e=await r.json();toast('保存失败: '+(e.detail||''),'err');}
+}
+async function deleteBot(){
+  if(!currentId)return;if(!confirm('确定删除 "'+currentId+'"？'))return;
+  const r=await fetch(API+'/admin/personas/'+currentId,{method:'DELETE'});
+  if(r.ok){toast('已删除','ok');currentId=null;showEditor(false);loadList();}else toast('删除失败','err');
+}
+async function previewPrompt(){
+  const payload=buildPayload();
+  const r=await fetch(API+'/admin/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:payload})});
+  const d=await r.json();const el=document.getElementById('previewBody');
+  if(d.ok)el.textContent=d.preview;else el.textContent='预览失败: '+(d.detail||'');
+}
+function togglePreviewPanel(){
+  var panel=document.getElementById('previewPanel');
+  var btn=document.getElementById('btnTogglePreview');
+  var area=document.getElementById('editorArea');
+  if(!panel)return;
+  var collapsed=panel.style.display==='none'||panel.dataset.collapsed==='1';
+  if(collapsed){
+    panel.style.display='';
+    panel.dataset.collapsed='0';
+    btn.textContent='← 收纳';
+    if(area)area.style.gridTemplateColumns='';
+  } else {
+    panel.style.display='none';
+    panel.dataset.collapsed='1';
+    btn.textContent='→ 展开预览';
+    if(area)area.style.gridTemplateColumns='1fr';
+  }
+}
+function copyPreview(){navigator.clipboard.writeText(document.getElementById('previewBody').textContent).then(()=>toast('已复制','ok'));}
+function copyApiSnippet(){
+  const id=currentId||document.getElementById('botId').value.trim();
+  const col=tags.col.length?[...tags.col]:['agent_memory'];
+  const snippet=JSON.stringify({message:'用户消息',session_id:'session-001',collections:col,persona:{name:document.getElementById('f_name').value||'小美',role:document.getElementById('f_role').value||'客服助手',brand:document.getElementById('f_brand').value||'品牌'}},null,2);
+  navigator.clipboard.writeText(snippet).then(()=>toast('API 示例已复制','ok'));
+}
+function addTag(e,key){if(e.key!=='Enter')return;e.preventDefault();const v=e.target.value.trim();if(v&&!tags[key].includes(v)){tags[key].push(v);renderTags(key);}e.target.value='';}
+function renderTags(key){const map={traits:'tags_traits',style:'tags_style',topics:'tags_topics'};const el=document.getElementById(map[key]);el.innerHTML=tags[key].map((t,i)=>`<span class="tag">${t}<span class="rm" onclick="removeTag('${key}',${i})">x</span></span>`).join('');}
+function removeTag(key,idx){tags[key].splice(idx,1);renderTags(key);}
+function toast(msg,type){const el=document.getElementById('toast');el.textContent=msg;el.className=type;el.style.display='block';setTimeout(()=>el.style.display='none',2500);}
+loadList();
+
+let _allCollections=[];
+async function loadCollections(selected=[]){
+  const loading=document.getElementById('col-loading');
+  const box=document.getElementById('col-checkboxes');
+  try{
+    const r=await fetch(API+'/admin/collections');
+    const d=await r.json();
+    _allCollections=d.collections||[];
+  }catch(e){
+    _allCollections=['agent_memory','cs_knowledge','sales_products','faq_base'];
+  }
+  // 合并当前已选但不在列表中的（自定义）
+  for(const s of selected){if(!_allCollections.includes(s))_allCollections.push(s);}
+  if(loading)loading.style.display='none';
+  renderColCheckboxes(selected);
+}
+function renderColCheckboxes(selected){
+  const box=document.getElementById('col-checkboxes');
+  if(!box)return;
+  box.innerHTML=_allCollections.map(col=>{
+    const checked=tags.col.includes(col)?'checked':'';
+    return `<label style="display:flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem;font-family:var(--mono);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><input type="checkbox" value="${col}" ${checked} onchange="onColChange(this)" style="accent-color:var(--accent)"/>${col}</label>`;
+  }).join('');
+}
+function onColChange(cb){
+  if(cb.checked){if(!tags.col.includes(cb.value))tags.col.push(cb.value);}
+  else{tags.col=tags.col.filter(v=>v!==cb.value);}
+}
+function getSelectedCols(){return tags.col.length?[...tags.col]:['agent_memory'];}
+
+function togglePreset(e,key,val){
+  const has=tags[key]&&tags[key].includes(val);
+  if(has){tags[key]=tags[key].filter(v=>v!==val);}else{if(!tags[key])tags[key]=[];tags[key].push(val);}
+  renderTags(key);
+}
+function syncPresetHighlight(){
+  document.querySelectorAll('.col-preset[onclick*="togglePreset"]').forEach(function(el){
+    var m=(el.getAttribute('onclick')||'').match(/togglePreset\(event,'([\w一-龥]+)','([\s\S]+?)'\)/);
+    if(!m)return;
+    var active=tags[m[1]]&&tags[m[1]].includes(m[2]);
+    el.style.borderColor=active?'var(--accent)':'';
+    el.style.color=active?'var(--accent2)':'';
+    el.style.background=active?'rgba(108,99,255,.12)':'';
+  });
+}
+
+function togglePreset(e, key, val) {
+  var has = tags[key].indexOf(val) !== -1;
+  if (has) { tags[key] = tags[key].filter(function(v){ return v !== val; }); }
+  else { tags[key].push(val); }
+  renderTags(key);
+}
+function syncPresetStyles() {
+  document.querySelectorAll('.col-preset[onclick*="togglePreset"]').forEach(function(el) {
+    var m = el.getAttribute('onclick').match(/togglePreset\(event,'(\w+)','([^']+)'\)/);
+    if (!m) return;
+    var key = m[1], val = m[2];
+    var active = tags[key] && tags[key].indexOf(val) !== -1;
+    el.style.borderColor = active ? 'var(--accent)' : '';
+    el.style.color = active ? 'var(--accent2)' : '';
+    el.style.background = active ? 'rgba(108,99,255,.12)' : '';
+  });
+}
+</script></body></html>

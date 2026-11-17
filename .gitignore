@@ -1,0 +1,69 @@
+# ── Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── 包安装元数据（pip install -e . 生成，无需提交） ──
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ── 虚拟环境 ─────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+ ENV/
+
+# ── 环境变量（含密钥，绝对不能提交） ────────────────
+.env
+.env.local
+.env.production
+.env.*
+!.env.example
+
+# HTTPS 证书与私钥仅保存在部署环境
+deploy/certs/*
+!deploy/certs/README.md
+*.key
+*.p12
+*.pfx
+
+# ── IDE ──────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+
+# ── 测试 / 覆盖率 ─────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+tests/_test_output.txt
+staging_status.txt
+backups/
+.claude/settings.local.json
+
+# ── 数据目录（本地测试数据，不提交） ─────────────────
+data/staging/pending/
+data/staging/processing/
+data/staging/done/
+data/staging/failed/
+data/staging/manifest.json
+data/uploads/
+
+# ── 日志 ─────────────────────────────────────────────
+*.log
+logs/
+
+# ── macOS ────────────────────────────────────────────
+.DS_Store
+
+# ── Windows ──────────────────────────────────────────
+Thumbs.db
+desktop.ini

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数据入库管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3250;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--text:#e2e8f0;--muted:#64748b;--mono:'JetBrains Mono',monospace;--sans:'Sora','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#1a1d27,#16192a);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#34d399,#60a5fa);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+header h1{font-size:1rem;font-weight:600}
+.nav-links{margin-left:auto;display:flex;gap:.5rem}
+.nav-link{font-size:.78rem;padding:5px 12px;border-radius:6px;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:all .15s}
+.nav-link:hover,.nav-link.active{color:var(--accent2);border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.08)}
+.main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.85rem;font-weight:600}
+.card-body{padding:1.25rem;overflow-y:auto}
+.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:6px;padding:7px 14px;font-size:.78rem;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}
+.btn:hover{border-color:var(--accent);color:var(--accent2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{opacity:.85}
+.btn.green{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:var(--green)}.btn.green:hover{background:rgba(52,211,153,.25)}
+.btn.red{border-color:rgba(248,113,113,.4);color:var(--red)}.btn.red:hover{background:rgba(248,113,113,.1)}
+.btn.sm{padding:4px 10px;font-size:.72rem}
+.upload-zone{border:2px dashed var(--border);border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:1rem}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(108,99,255,.05)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:2rem;margin-bottom:.5rem;opacity:.5}
+.upload-text{font-size:.85rem;color:var(--muted)}.upload-text strong{color:var(--accent2)}
+.upload-formats{font-size:.7rem;color:var(--muted);margin-top:.4rem}
+.meta-form{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.field label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.field select,.field input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:.5rem .7rem;font-size:.82rem;font-family:var(--sans);width:100%}
+.field select:focus,.field input:focus{outline:none;border-color:var(--accent)}
+.file-queue{display:flex;flex-direction:column;gap:.5rem;max-height:180px;overflow-y:auto;margin-bottom:1rem}
+.file-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;display:flex;align-items:center;gap:.75rem}
+.fi-name{flex:1;font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-size{font-size:.7rem;color:var(--muted);white-space:nowrap}
+.fi-st{font-size:.68rem;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.st-pending{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.3)}
+.st-uploading{background:rgba(96,165,250,.12);color:var(--blue);border:1px solid rgba(96,165,250,.3)}
+.st-done{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+.st-error{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem;text-align:center}
+.stat-val{font-size:1.4rem;font-weight:600;font-family:var(--mono)}
+.stat-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem}
+.sp .stat-val{color:var(--yellow)}.sg .stat-val{color:var(--green)}.sb .stat-val{color:var(--blue)}.sr .stat-val{color:var(--red)}
+.staging-list{display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto}
+.si{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem;display:flex;align-items:flex-start;gap:.75rem}
+.si-info{flex:1;min-width:0}
+.si-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si-meta{font-size:.7rem;color:var(--muted);margin-top:2px}
+.si-err{font-size:.7rem;color:var(--red);margin-top:3px}
+.si-id{font-family:var(--mono);font-size:.65rem;color:var(--accent2)}
+.result-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem;font-size:.82rem;line-height:1.8;display:none}
+.result-box.ok{border-color:rgba(52,211,153,.4)}.result-box.warn{border-color:rgba(251,191,36,.4)}
+.res-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.res-row:last-child{border:none}
+.res-key{color:var(--muted)}.res-val{font-weight:600;color:var(--green);font-family:var(--mono)}
+.err-list{color:var(--red);font-size:.75rem;margin-top:.5rem}
+.empty-tip{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem;font-size:.85rem;display:none;z-index:999}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+#toast.info{border-color:var(--blue);color:var(--blue)}
+@keyframes spin{to{transform:rotate(360deg)}}.spin{display:inline-block;animation:spin .8s linear infinite}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo">&#x1F4E6;</div>
+  <h1>数据入库管理</h1>
+  <div class="nav-links">
+    <a href="/admin/" class="nav-link">&#x1F916; Persona 管理</a>
+    <a href="/admin/ingest" class="nav-link active">&#x1F4E6; 数据入库</a>
+  </div>
+</header>
+<div class="main">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">&#x1F4C4; 文件上传</span>
+      <button class="btn sm" onclick="clearQueue()">清空队列</button>
+    </div>
+    <div class="card-body">
+      <div class="upload-zone" id="dropZone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="fileInput" multiple accept=".txt,.md,.csv,.json,.jsonl,.pdf,.docx,.doc,.xlsx,.xls" onchange="onFileSelect(event)">
+        <div class="upload-icon">&#x1F4C1;</div>
+        <div class="upload-text"><strong>点击选择</strong> 或拖拽文件到此处</div>
+        <div class="upload-formats">支持：txt / md / csv / json / jsonl / pdf / docx / xlsx</div>
+      </div>
+      <div class="meta-form">
+        <div class="field"><label>文档类型</label>
+          <select id="docType" onchange="syncCollection()">
+            <option value="product">商品资料</option>
+            <option value="faq">FAQ 问答</option>
+            <option value="sop">流程 SOP</option>
+            <option value="policy">政策文件</option>
+            <option value="knowledge">手诊 / 健康知识</option>
+          </select>
+        </div>
+        <div class="field"><label>业务分类</label><input type="text" id="category" placeholder="个护清洁 / 母婴用品..."></div>
+        <div class="field" style="grid-column:1/-1">
+          <label style="text-transform:none;letter-spacing:0">替换已有数据</label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.82rem;color:var(--text)">
+            <input type="checkbox" id="replaceIngest" style="width:auto">
+            入库前按<strong>文件名</strong>删除 PG/Milvus 中同名旧块（等同 kb.py --replace）
+          </label>
+        </div>
+        <div class="field"><label>知识库集合</label>
+          <select id="collection">
+            <option value="products">products（商品资料）</option>
+            <option value="faq">faq（FAQ 问答）</option>
+            <option value="sop">sop（流程 SOP）</option>
+            <option value="policy">policy（政策文件）</option>
+            <option value="palm_diagnosis">palm_diagnosis（手诊知识库）</option>
+          </select>
+        </div>
+      </div>
+      <div class="file-queue" id="fileQueue"></div>
+      <button class="btn primary" style="width:100%" id="btnUpload" onclick="uploadAll()" disabled>&#x2B06; 上传到暂存区</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">&#x1F4CB; 暂存区状态</span>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn sm" onclick="loadStaging()">&#x21BB; 刷新</button>
+        <button class="btn green sm" id="btnRunAll" onclick="runAll()">&#x25B6; 全部入库</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="stats-grid">
+        <div class="stat-card sp"><div class="stat-val" id="sPending">0</div><div class="stat-label">等待中</div></div>
+        <div class="stat-card sb"><div class="stat-val" id="sProcessing">0</div><div class="stat-label">处理中</div></div>
+        <div class="stat-card sg"><div class="stat-val" id="sDone">0</div><div class="stat-label">已完成</div></div>
+        <div class="stat-card sr"><div class="stat-val" id="sFailed">0</div><div class="stat-label">失败</div></div>
+      </div>
+      <div class="staging-list" id="stagingList"><div class="empty-tip">暂无文件，上传后在此查看</div></div>
+      <div class="result-box" id="resultBox"></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const API='';
+let queue=[];
+;
+const DOC_COLLECTION_MAP={product:'products',faq:'faq',sop:'sop',policy:'policy',knowledge:'palm_diagnosis'};
+function syncCollection(){
+  var dt=document.getElementById('docType').value;
+  var col=document.getElementById('collection');
+  if(col)col.value=DOC_COLLECTION_MAP[dt]||'products';
+}
+function fmtSize(b){if(b<1024)return b+'B';if(b<1048576)return (b/1024).toFixed(1)+'KB';return (b/1048576).toFixed(1)+'MB';}
+function fmtTime(s){if(!s)return '';try{return new Date(s).toLocaleString('zh-CN');}catch{return s;}}
+function onDragOver(e){e.preventDefault();e.stopPropagation();document.getElementById('dropZone').classList.add('drag');}
+function onDragLeave(){document.getElementById('dropZone').classList.remove('drag');}
+function onDrop(e){e.preventDefault();e.stopPropagation();document.getElementById('dropZone').classList.remove('drag');addFiles(e.dataTransfer.files);}
+function onFileSelect(e){addFiles(e.target.files);e.target.value='';}
+function addFiles(files){for(const f of files)queue.push({file:f,status:'pending'});renderQueue();document.getElementById('btnUpload').disabled=!queue.length;}
+function clearQueue(){queue=[];renderQueue();document.getElementById('btnUpload').disabled=true;}
+function renderQueue(){
+  const el=document.getElementById('fileQueue');
+  if(!queue.length){el.innerHTML='';return;}
+  const labels={pending:'待上传',uploading:'上传中',done:'完成',error:'失败'};
+  el.innerHTML=queue.map(function(item,i){
+    var rmBtn=item.status==='pending'?'<button class="btn red sm" onclick="queue.splice('+i+',1);renderQueue()">x</button>':'';
+    return '<div class="file-item"><span style="font-size:1.1rem">&#x1F4C4;</span>'
+      +'<span class="fi-name" title="'+item.file.name+'">'+item.file.name+'</span>'
+      +'<span class="fi-size">'+fmtSize(item.file.size)+'</span>'
+      +'<span class="fi-st st-'+item.status+'">'+(labels[item.status]||item.status)+'</span>'
+      +rmBtn+'</div>';
+  }).join('');
+}
+async function uploadAll(){
+  const docType=document.getElementById('docType').value;
+  const category=document.getElementById('category').value;
+  const collection=document.getElementById('collection').value||'default';
+  const btn=document.getElementById('btnUpload');
+  btn.disabled=true;
+  let uploaded=0;
+  for(let i=0;i<queue.length;i++){
+    if(queue[i].status!=='pending')continue;
+    queue[i].status='uploading';renderQueue();
+    const fd=new FormData();
+    fd.append('file',queue[i].file);
+    fd.append('doc_type',docType);
+    fd.append('category',category);
+    fd.append('collection',collection);
+    fd.append('replace', document.getElementById('replaceIngest').checked ? 'true' : 'false');
+    try{
+      const r=await fetch(API+'/ingest/upload',{method:'POST',body:fd});
+      if(r.ok){queue[i].status='done';uploaded++;}else{
+        const e=await r.json();queue[i].status='error';
+        toast('上传失败: '+(e.detail||''),'err');
+      }
+    }catch(e){queue[i].status='error';toast('网络错误: '+e.message,'err');}
+    renderQueue();
+  }
+  if(uploaded)toast('上传完成 '+uploaded+' 个文件','ok');
+  btn.disabled=false;
+  loadStaging();
+}
+async function loadStaging(){
+  try{
+    const r=await fetch(API+'/ingest/staging');
+    const d=await r.json();
+    document.getElementById('sPending').textContent=d.pending||0;
+    document.getElementById('sProcessing').textContent=d.processing||0;
+    document.getElementById('sDone').textContent=d.done||0;
+    document.getElementById('sFailed').textContent=d.failed||0;
+    renderStaging(d.files||[]);
+  }catch(e){toast('加载失败: '+e.message,'err');}
+}
+function renderStaging(files){
+  const el=document.getElementById('stagingList');
+  if(!files.length){el.innerHTML='<div class="empty-tip">暂无文件，上传后在此查看</div>';return;}
+  const stMap={pending:'st-pending',processing:'st-uploading',done:'st-done',failed:'st-error'};
+  const stLabel={pending:'等待中',processing:'处理中',done:'已完成',failed:'失败'};
+  el.innerHTML=files.map(f=>`
+    <div class="si">
+      <span style="font-size:1.2rem;flex-shrink:0">${{pending:'&#x1F551;',processing:'&#x23F3;',done:'&#x2705;',failed:'&#x274C;'}[f.status]||'&#x1F4C4;'}</span>
+      <div class="si-info">
+        <div class="si-name" title="${f.filename||f.file_id}">${f.filename||f.file_id}</div>
+        <div class="si-meta">${f.metadata?.doc_type||''} ${f.metadata?.category?'· '+f.metadata.category:''} · ${fmtTime(f.upload_time)}</div>
+        ${f.error?`<div class="si-err">${f.error}</div>`:''}
+        <div class="si-id">${f.file_id}</div>
+      </div>
+      <span class="fi-st ${stMap[f.status]||''}">${stLabel[f.status]||f.status}</span>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${f.status==='pending'?`<button class="btn green sm" onclick="runFile('${f.file_id}')">&#x25B6;</button>`:''}
+        <button class="btn red sm" onclick="delFile('${f.file_id}')">x</button>
+      </div>
+    </div>`).join('');
+}
+async function runAll(){
+  const btn=document.getElementById('btnRunAll');
+  btn.disabled=true;btn.innerHTML='<span class="spin">&#x21BB;</span> 入库中...';
+  try{
+    const r=await fetch(API+'/ingest/staging/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const d=await r.json();
+    if(r.ok)showResult(d);
+    else toast('入库失败: '+(d.detail||''),'err');
+  }catch(e){toast('网络错误: '+e.message,'err');}
+  btn.disabled=false;btn.innerHTML='&#x25B6; 全部入库';
+  loadStaging();
+}
+async function runFile(id){
+  // 找到并禁用触发该操作的按钮，防止重复点击
+  const btn=event&&event.target;
+  if(btn){btn.disabled=true;btn.innerHTML='&#x21BB;';}
+  toast('开始入库...','info');
+  try{
+    const r=await fetch(API+'/ingest/staging/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file_id:id})});
+    const d=await r.json();
+    if(r.ok)showResult(d);
+    else toast('入库失败: '+(d.detail||''),'err');
+  }catch(e){toast('网络错误: '+e.message,'err');}
+  loadStaging();
+}
+async function delFile(id){
+  if(!confirm('删除暂存文件 '+id+'？'))return;
+  const r=await fetch(API+'/ingest/staging/'+id,{method:'DELETE'});
+  if(r.ok)toast('已删除','ok');
+  else toast('删除失败','err');
+  loadStaging();
+}
+function showResult(d){
+  const el=document.getElementById('resultBox');
+  const hasResult=d.total_chunks>0||d.ingested>0||d.skipped>0;
+  el.className='result-box '+(hasResult?'ok':'warn');
+  el.style.display='block';
+  el.innerHTML=`
+    <div class="res-row"><span class="res-key">处理分块</span><span class="res-val">${d.total_chunks||0}</span></div>
+    <div class="res-row"><span class="res-key">写入成功</span><span class="res-val">${d.ingested||0}</span></div>
+    <div class="res-row"><span class="res-key">跳过</span><span class="res-val" style="color:var(--yellow)">${d.skipped||0}</span></div>
+    <div class="res-row"><span class="res-key">摘要</span><span class="res-val" style="color:var(--text);font-family:var(--sans)">${d.summary||'无文件被处理'}</span></div>
+    ${d.errors&&d.errors.length?`<div class="err-list"><strong>错误：</strong>${d.errors.join('; ')}</div>`:''}
+  `;
+}
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=type;el.style.display='block';
+  setTimeout(()=>el.style.display='none',2800);
+}
+loadStaging();
+</script></body></html>
